@@ -16,6 +16,7 @@ host file(cc/hosts):
 ```
 ubuntu@ip1
 ununtu@ip2
+ununtu@ip3
 ...
 ```
 
@@ -31,6 +32,7 @@ varibale file(cc/s3q2):
 url1
 url2
 url3
+...
 ```
 ** note: the variable file should have same number of lines
 
