@@ -1,7 +1,7 @@
 # pyssh
 simple python tools to help manage several virtual servers.
 
-** developed for cmu cloud computing 
+** developed and used in cmu cloud computing team project
 
 ## features
 * pyssh - Send ssh commands to mulitple servers in parallel
