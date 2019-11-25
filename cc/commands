@@ -1,0 +1,43 @@
+# setup
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'sudo chmod a+rw /home/ubuntu/.aws/credentials'
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'mkdir .aws && mkdir s3q2 && mkdir s3q3'
+
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'sudo DEBIAN_FRONTEND=noninteractive apt update'
+python pyssh.py -i lightsail.pem -h cc/hosts -c "sudo DEBIAN_FRONTEND=noninteractive apt install awscli mysql-client -y"
+#################################
+# import csv to db
+python pyssh.py -i lightsail.pem -h cc/hosts -e cc/s3q2 -c 'aws s3 sync {s3q2} s3q2/ > tmp.log'
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'ls s3q2 | wc -l'
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'cat s3q2/*.csv > q2one.csv'
+
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'ls -alh'
+
+python pyscp.py -i lightsail.pem -h cc/hosts -f cc/q2.sql -t "q2.sql"
+
+python pyssh.py -i lightsail.pem -h cc/hosts -e cc/db -c "sudo mysql -u dbmasteruser -pliverexplosion -h {db} < q2.sql"
+
+##################################
+# deploy web server
+rm web.tar.gz
+tar -C /mnt/d/cmucc/teamproject/LiverExplosion-F19/phase3/ -zcvf web.tar.gz web
+
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'sudo DEBIAN_FRONTEND=noninteractive apt update'
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'sudo DEBIAN_FRONTEND=noninteractive apt install maven openjdk-11-jre-headless mysql-client -y'
+
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'rm web.tar.gz && rm web -r'
+python pyscp.py -i lightsail.pem -h cc/hosts -f web.tar.gz -t "web.tar.gz"
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'tar zxvf web.tar.gz'
+
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'cd web && mvn clean package > tlog'
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'tail web/tlog'
+
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'rm screenlog.0 && sudo killall screen'
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'screen -dmL sudo java -cp web/target/app.jar liver.VertxServer'
+python pyssh.py -i lightsail.pem -h cc/hosts -c 'cat screenlog.0'
+
+
+###################
+# get lightsail ip
+aws lightsail get-instances --output table  --profile team  --query "instances[*].privateIpAddress"
+aws lightsail get-instances --output table  --profile team  --query "instances[*].publicIpAddress"
+aws lightsail get-relational-database-parameters --profile team  --relational-database-name "db-lei-19"
